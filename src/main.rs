@@ -6,7 +6,10 @@ fn main() {
     let client = api::Api::new(token);
 
     let task_list = client.get_tasks();
-    for task in task_list {
+    for task in &task_list {
         println!("{:?}", task);
     }
+
+    // let task_list = client.get_tasks();
+    client.complete_task(&task_list[task_list.len() - 1]);
 }
