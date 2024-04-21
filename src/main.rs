@@ -1,5 +1,6 @@
 use std::env;
 pub mod api;
+pub mod tui;
 
 fn main() {
     let token = env::var("TODOIST_TOKEN").unwrap();
