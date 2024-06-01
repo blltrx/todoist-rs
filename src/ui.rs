@@ -9,7 +9,7 @@ use crate::api;
 // this along with the App needs to be refactored, like why is this here?
 
 pub fn make_list_widget(list_elements: &Vec<api::Task>, width: u16) -> List {
-    let content_length: usize = (width as f32 * 0.75).round() as usize;
+    let content_length: usize = (width as f32 * 0.6).round() as usize;
     let (mut spacer_length, overflow) = usize::overflowing_sub(width as usize, content_length + 17);
     if overflow {
         spacer_length = 2;
