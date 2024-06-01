@@ -4,18 +4,18 @@ pub mod request;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Due {
-    date: String,
-    string: String,
+    pub date: String,
+    pub string: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Task {
-    id: String,
-    content: String,
-    description: String,
-    is_completed: bool,
-    priority: u8,
-    due: Option<Due>,
+    pub id: String,
+    pub content: String,
+    pub description: String,
+    pub is_completed: bool,
+    pub priority: u8,
+    pub due: Option<Due>,
 }
 
 #[allow(dead_code)]

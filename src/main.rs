@@ -1,18 +1,16 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{
-    prelude::*,
-    symbols::border,
-    widgets::{block::*, *},
-};
+use ratatui::{prelude::*, widgets::*};
+
 use std::{env, io};
 
 pub mod api;
 pub mod tui;
+pub mod ui;
 
 // mostly based on the basic tutorial on the ratatui docs
 pub struct App {
     client: api::Api,
-    position: u8,
+    position: ListState,
     tasks: Vec<api::Task>,
     exit: bool,
 }
@@ -22,7 +20,7 @@ impl App {
     pub fn new(todoist_token: String) -> App {
         return App {
             client: api::Api::new(todoist_token),
-            position: 0,
+            position: ListState::default(),
             tasks: Vec::new(),
             exit: false,
         };
@@ -30,6 +28,7 @@ impl App {
 
     // runs the main loop for the app
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
+        self.tasks = self.client.get_tasks();
         while !self.exit {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
@@ -37,8 +36,13 @@ impl App {
         Ok(())
     }
 
-    fn render_frame(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.size());
+    // renders the task list widget
+    fn render_frame(&mut self, frame: &mut Frame) {
+        frame.render_stateful_widget(
+            ui::make_list_widget(&self.tasks),
+            frame.size(),
+            &mut self.position,
+        );
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -54,38 +58,30 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('j') => self.increment_selection(),
+            KeyCode::Char('k') => self.decrement_selection(),
+            KeyCode::Char('u') => self.tasks = self.client.get_tasks(),
+            KeyCode::Char('c') => self.complete_current_task(),
             _ => {}
         }
     }
-}
 
-impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let header = Title::from(" todo ".italic());
-        let footer = Title::from(Line::from(vec![
-            " c ".blue().into(),
-            "to complete - ".into(),
-            "n ".blue().into(),
-            "to create - ".into(),
-            "u ".blue().into(),
-            "to update ".into(),
-        ]));
-        let body = Text::from("body text");
-
-        let block = Block::default()
-            .title(header.alignment(Alignment::Center))
-            .title(
-                footer
-                    .alignment(Alignment::Center)
-                    .position(Position::Bottom),
-            )
-            .borders(Borders::ALL)
-            .border_set(border::PLAIN);
-
-        Paragraph::new(body)
-            .centered()
-            .block(block)
-            .render(area, buf);
+    fn increment_selection(&mut self) {
+        let length = self.tasks.len();
+        if self.position.offset() == length - 1 {
+            return;
+        }
+        *self.position.offset_mut() += 1;
+    }
+    fn decrement_selection(&mut self) {
+        if self.position.offset() == 0 {
+            return;
+        }
+        *self.position.offset_mut() -= 1;
+    }
+    fn complete_current_task(&mut self) {
+        self.client
+            .complete_task(&self.tasks[self.position.offset()])
     }
 }
 
@@ -93,7 +89,7 @@ fn main() -> io::Result<()> {
     // initialise terminal ready for render
     let mut terminal = tui::init()?;
     // initialise app and api client
-    let token = env::var("TODOIST_TOKEN").unwrap();
+    let token = env::var("TODOIST_TOKEN").unwrap(); // TODO error handle this pls
     let mut app = App::new(token);
     let app_result = app.run(&mut terminal);
     // return terminal to default state
