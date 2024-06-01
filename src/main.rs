@@ -12,7 +12,7 @@ pub mod tui;
 // mostly based on the basic tutorial on the ratatui docs
 pub struct App {
     client: api::Api,
-    position: u8,
+    position: ListState,
     tasks: Vec<api::Task>,
     exit: bool,
 }
@@ -22,7 +22,7 @@ impl App {
     pub fn new(todoist_token: String) -> App {
         return App {
             client: api::Api::new(todoist_token),
-            position: 0,
+            position: ListState::default(),
             tasks: Vec::new(),
             exit: false,
         };
@@ -37,8 +37,8 @@ impl App {
         Ok(())
     }
 
-    fn render_frame(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.size());
+    fn render_frame(&mut self, frame: &mut Frame) {
+        frame.render_stateful_widget(self, frame.size(), &mut self.position);
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -59,8 +59,9 @@ impl App {
     }
 }
 
-impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl StatefulWidget for &App {
+    type State = ListState;
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let header = Title::from(" todo ".italic());
         let footer = Title::from(Line::from(vec![
             " c ".blue().into(),
@@ -70,7 +71,7 @@ impl Widget for &App {
             "u ".blue().into(),
             "to update ".into(),
         ]));
-        let body = Text::from("body text");
+        let items = ["a", "b", "c"];
 
         let block = Block::default()
             .title(header.alignment(Alignment::Center))
@@ -82,10 +83,7 @@ impl Widget for &App {
             .borders(Borders::ALL)
             .border_set(border::PLAIN);
 
-        Paragraph::new(body)
-            .centered()
-            .block(block)
-            .render(area, buf);
+        StatefulWidget::render(List::new(items).block(block), area, buf, state)
     }
 }
 
