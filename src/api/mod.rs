@@ -98,10 +98,11 @@ impl Api {
 
     pub fn complete_task(&self, task: &Task) {
         let url = format!("https://api.todoist.com/rest/v2/tasks/{}/close", task.id);
-        let res = request::post(&self.token, &self.client, url, String::new());
-        match res {
-            Some(x) => println!("res: {}", x),
-            None => return,
-        }
+        let _ = request::post(&self.token, &self.client, url, String::new());
+    }
+
+    pub fn quick_add(&self, quick: String) {
+        let url = String::from("https://api.todoist.com/sync/v9/quick/add");
+        let _ = request::post_quickadd(&self.token, &self.client, url, quick);
     }
 }

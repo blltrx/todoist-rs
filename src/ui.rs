@@ -6,9 +6,11 @@ use ratatui::{
 
 use crate::api;
 
+// this along with the App needs to be refactored, like why is this here?
+
 pub fn make_list_widget(list_elements: &Vec<api::Task>, width: u16) -> List {
     let content_length: usize = (width as f32 * 0.75).round() as usize;
-    let (mut spacer_length, overflow) = usize::overflowing_sub(width as usize, content_length + 14);
+    let (mut spacer_length, overflow) = usize::overflowing_sub(width as usize, content_length + 17);
     if overflow {
         spacer_length = 2;
     };
@@ -24,7 +26,7 @@ pub fn make_list_widget(list_elements: &Vec<api::Task>, width: u16) -> List {
     ]));
     let items = list_elements.iter().map(|task| {
         format!(
-            "{:content_length$}{:spacer_length$}{:7}  {:1}",
+            "{:content_length$}{:spacer_length$}{:10}  {:1}",
             task.content
                 .chars()
                 .take(content_length)
