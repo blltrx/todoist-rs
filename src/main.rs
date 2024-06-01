@@ -29,6 +29,7 @@ impl App {
     // runs the main loop for the app
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
         self.tasks = self.client.get_tasks();
+        self.position.select(Some(0));
         while !self.exit {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
@@ -39,7 +40,7 @@ impl App {
     // renders the task list widget
     fn render_frame(&mut self, frame: &mut Frame) {
         frame.render_stateful_widget(
-            ui::make_list_widget(&self.tasks),
+            ui::make_list_widget(&self.tasks, frame.size().width),
             frame.size(),
             &mut self.position,
         );
@@ -58,30 +59,43 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
+
             KeyCode::Char('j') => self.increment_selection(),
+            KeyCode::Down => self.increment_selection(),
+
             KeyCode::Char('k') => self.decrement_selection(),
+            KeyCode::Up => self.decrement_selection(),
+
             KeyCode::Char('u') => self.tasks = self.client.get_tasks(),
+
             KeyCode::Char('c') => self.complete_current_task(),
+            KeyCode::Delete => self.complete_current_task(),
+
+            // KeyCode::Char('n') => self.create_task(),
             _ => {}
         }
     }
 
     fn increment_selection(&mut self) {
+        let current = self.position.selected().unwrap_or(0);
         let length = self.tasks.len();
-        if self.position.offset() == length - 1 {
+        if current == length - 1 {
             return;
         }
-        *self.position.offset_mut() += 1;
+        self.position.select(Some(current + 1));
     }
     fn decrement_selection(&mut self) {
-        if self.position.offset() == 0 {
+        let current = self.position.selected().unwrap_or(0);
+        if current == 0 {
             return;
         }
-        *self.position.offset_mut() -= 1;
+        self.position.select(Some(current - 1));
     }
+
     fn complete_current_task(&mut self) {
-        self.client
-            .complete_task(&self.tasks[self.position.offset()])
+        let current = self.position.selected().unwrap_or(0);
+        self.client.complete_task(&self.tasks[current]);
+        self.tasks = self.client.get_tasks();
     }
 }
 
