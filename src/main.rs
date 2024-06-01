@@ -152,6 +152,9 @@ impl App {
 
     fn complete_current_task(&mut self) {
         let current = self.position.selected().unwrap_or(0);
+        if self.tasks.len() == 0 {
+            return;
+        };
         self.client.complete_task(&self.tasks[current]);
         self.tasks = self.client.get_tasks();
     }
