@@ -138,7 +138,7 @@ pub fn tasklist_to_strings(tasklist: &[Task], width: u16) -> Vec<String> {
 
 pub fn task_to_string(task: &Task) -> String {
     format!(
-        "!!{} - {}\n\n{}\n{}",
+        "!!{} - {}\n\n{}\n\n---\n{}",
         task.priority,
         task.content,
         task.description,
