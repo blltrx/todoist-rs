@@ -8,3 +8,8 @@ cargo install --git https://www.github.com/blltrx/todoist-rs
 ```
 
 To use it, set the environment variable `TODOIST_TOKEN` to your [Todoist API token](https://todoist.com/help/articles/find-your-api-token-Jpzx9IIlB) and run the executable `todoist-rs`.
+
+
+todo list
++ allow input for description on task creation
++ consistent API
