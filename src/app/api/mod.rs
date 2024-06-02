@@ -109,3 +109,29 @@ impl Api {
         let _ = request::post_quickadd(&self.token, &self.client, url, quick);
     }
 }
+
+pub fn tasklist_to_strings(tasklist: &Vec<Task>, width: u16) -> Vec<String> {
+    let content_length: usize = (width as f32 * 0.6).round() as usize;
+    let (mut spacer_length, overflow) = usize::overflowing_sub(width as usize, content_length + 17);
+    if overflow {
+        spacer_length = 2;
+    };
+    tasklist
+        .iter()
+        .map(|task| {
+            format!(
+                "{:content_length$}{:spacer_length$}{:10}  {:1}",
+                task.content
+                    .chars()
+                    .take(content_length)
+                    .collect::<String>(),
+                " ",
+                match &task.due {
+                    None => String::from("not due"),
+                    Some(x) => x.date.to_owned(),
+                },
+                task.priority,
+            )
+        })
+        .collect()
+}

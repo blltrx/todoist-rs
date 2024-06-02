@@ -50,12 +50,16 @@ impl App {
     fn render_frame(&mut self, frame: &mut ratatui::Frame) {
         match self.mode {
             // normal mode just displays the task list
-            Mode::Normal => ui::render_normal_ui(frame, &self.tasks, &mut self.position),
+            Mode::Normal => ui::render_normal_ui(
+                frame,
+                &api::tasklist_to_strings(&self.tasks, frame.size().width),
+                &mut self.position,
+            ),
 
             // create task mode
             Mode::Create => ui::render_create_ui(
                 frame,
-                &self.tasks,
+                &api::tasklist_to_strings(&self.tasks, frame.size().width),
                 &mut self.position,
                 &self.create_task_input,
             ),
