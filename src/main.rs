@@ -102,6 +102,7 @@ impl App {
         match self.mode {
             Mode::Normal => match key_event.code {
                 KeyCode::Char('q') => self.exit = true,
+                KeyCode::Esc => self.exit = true,
 
                 KeyCode::Char('j') => self.increment_selection(),
                 KeyCode::Down => self.increment_selection(),

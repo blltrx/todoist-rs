@@ -38,7 +38,10 @@ impl Api {
             &self.client,
             "https://api.todoist.com/rest/v2/tasks",
         );
-        let task_list: Vec<Task> = serde_json::from_str::<Vec<Task>>(&json).unwrap();
+        let mut task_list: Vec<Task> = serde_json::from_str::<Vec<Task>>(&json).unwrap();
+        task_list.sort_by_key(|task| task.priority);
+        task_list.reverse();
+
         return task_list;
     }
 
