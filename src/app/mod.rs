@@ -108,7 +108,7 @@ impl App {
 
                 KeyCode::Enter => self.mode = Mode::Info,
 
-                KeyCode::Char('n') => self.create_task(),
+                KeyCode::Char('n') => self.mode = Mode::Create,
                 _ => {}
             },
             // mode to allow typing for input
@@ -139,7 +139,7 @@ impl App {
                 KeyCode::Char('c') => self.complete_current_task(),
                 KeyCode::Delete => self.complete_current_task(),
 
-                KeyCode::Char('n') => self.create_task(),
+                KeyCode::Char('n') => self.mode = Mode::Create,
 
                 KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
@@ -174,10 +174,6 @@ impl App {
         };
         self.client.complete_task(&self.tasks[current]);
         self.tasks = self.client.get_tasks();
-    }
-
-    fn create_task(&mut self) {
-        self.mode = Mode::Create
     }
 
     fn add_task(&mut self) {
