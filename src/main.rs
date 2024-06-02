@@ -18,5 +18,5 @@ fn main() -> io::Result<()> {
     let app_result = app.run(&mut terminal);
     // return terminal to default state
     tui::restore().unwrap();
-    return app_result;
+    app_result
 }

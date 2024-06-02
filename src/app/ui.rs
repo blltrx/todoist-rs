@@ -12,7 +12,7 @@ pub fn render_create_ui(
     frame: &mut Frame,
     tasks: &Vec<String>,
     position: &mut ListState,
-    create_input: &String,
+    create_input: &str,
 ) {
     // create vertical layout
     let layout = Layout::default()
@@ -24,15 +24,29 @@ pub fn render_create_ui(
     frame.render_stateful_widget(make_list_widget(tasks), layout[1], position)
 }
 
+pub fn render_info_ui(
+    frame: &mut Frame,
+    tasks: &Vec<String>,
+    position: &mut ListState,
+    taskinfo: String,
+) {
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(frame.size());
+    frame.render_stateful_widget(make_list_widget(tasks), layout[0], position);
+    frame.render_widget(make_info_widget(&taskinfo), layout[1]);
+}
+
 fn make_list_widget(items: &Vec<String>) -> List {
     // setup formatting
     let header = Title::from(" todo ".bold().magenta());
     let footer = Title::from(Line::from(vec![
-        " c ".magenta().into(),
+        " c ".magenta(),
         "to complete - ".into(),
-        "n ".magenta().into(),
+        "n ".magenta(),
         "to create - ".into(),
-        "u ".magenta().into(),
+        "u ".magenta(),
         "to update ".into(),
     ]));
 
@@ -55,15 +69,15 @@ fn make_list_widget(items: &Vec<String>) -> List {
         .highlight_spacing(HighlightSpacing::Always);
 }
 
-fn make_input_widget(current_input: &String) -> Paragraph {
+fn make_input_widget(current_input: &str) -> Paragraph {
     let footer = Title::from(Line::from(vec![
-        " delete ".blue().into(),
+        " delete ".blue(),
         "to exit create mode - ".into(),
-        "enter ".blue().into(),
+        "enter ".blue(),
         "to create - ".into(),
     ]));
 
-    return Paragraph::new(current_input.as_str())
+    return Paragraph::new(current_input)
         .style(Style::default().fg(Color::LightMagenta))
         .block(
             Block::bordered().title("Create Task").title(
@@ -72,4 +86,10 @@ fn make_input_widget(current_input: &String) -> Paragraph {
                     .position(Position::Bottom),
             ),
         );
+}
+
+fn make_info_widget(taskinfo: &str) -> Paragraph {
+    return Paragraph::new(taskinfo)
+        .style(Style::default().fg(Color::LightMagenta))
+        .block(Block::bordered().title("Task Infomation"));
 }

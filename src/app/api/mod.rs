@@ -26,10 +26,10 @@ pub struct Api {
 
 impl Api {
     pub fn new(token: String) -> Api {
-        return Api {
+        Api {
             token,
             client: Client::new(),
-        };
+        }
     }
 
     pub fn get_tasks(&self) -> Vec<Task> {
@@ -42,7 +42,7 @@ impl Api {
         task_list.sort_by_key(|task| task.priority);
         task_list.reverse();
 
-        return task_list;
+        task_list
     }
 
     pub fn delete_task(&self, task: &Task) {
@@ -110,7 +110,7 @@ impl Api {
     }
 }
 
-pub fn tasklist_to_strings(tasklist: &Vec<Task>, width: u16) -> Vec<String> {
+pub fn tasklist_to_strings(tasklist: &[Task], width: u16) -> Vec<String> {
     let content_length: usize = (width as f32 * 0.6).round() as usize;
     let (mut spacer_length, overflow) = usize::overflowing_sub(width as usize, content_length + 17);
     if overflow {
@@ -134,4 +134,17 @@ pub fn tasklist_to_strings(tasklist: &Vec<Task>, width: u16) -> Vec<String> {
             )
         })
         .collect()
+}
+
+pub fn task_to_string(task: &Task) -> String {
+    format!(
+        "!!{} - {}\n\n{}\n{}",
+        task.priority,
+        task.content,
+        task.description,
+        match &task.due {
+            None => String::from("not due"),
+            Some(x) => x.date.to_owned(),
+        },
+    )
 }

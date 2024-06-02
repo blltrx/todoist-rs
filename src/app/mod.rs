@@ -19,19 +19,20 @@ pub struct App {
 enum Mode {
     Normal,
     Create,
+    Info,
 }
 
 impl App {
     /// initialise app struct with api client
     pub fn new(todoist_token: String) -> App {
-        return App {
+        App {
             client: api::Api::new(todoist_token),
             position: ListState::default(),
             tasks: Vec::new(),
             mode: Mode::Normal,
             create_task_input: String::new(),
             exit: false,
-        };
+        }
     }
 
     /// runs the main loop for the app
@@ -63,6 +64,18 @@ impl App {
                 &mut self.position,
                 &self.create_task_input,
             ),
+            Mode::Info => {
+                let mut taskinfo = String::new();
+                if let Some(current_task_index) = self.position.selected() {
+                    taskinfo = api::task_to_string(&self.tasks[current_task_index])
+                };
+                ui::render_info_ui(
+                    frame,
+                    &api::tasklist_to_strings(&self.tasks, frame.size().width),
+                    &mut self.position,
+                    taskinfo,
+                )
+            }
         }
     }
 
@@ -93,6 +106,8 @@ impl App {
                 KeyCode::Char('c') => self.complete_current_task(),
                 KeyCode::Delete => self.complete_current_task(),
 
+                KeyCode::Enter => self.mode = Mode::Info,
+
                 KeyCode::Char('n') => self.create_task(),
                 _ => {}
             },
@@ -107,6 +122,26 @@ impl App {
                 // delete last character from input attribute
                 KeyCode::Backspace => _ = self.create_task_input.pop(),
                 KeyCode::Delete => self.mode = Mode::Normal,
+                _ => {}
+            },
+            Mode::Info => match key_event.code {
+                KeyCode::Char('q') => self.exit = true,
+                KeyCode::Esc => self.exit = true,
+
+                KeyCode::Char('j') => self.increment_selection(),
+                KeyCode::Down => self.increment_selection(),
+
+                KeyCode::Char('k') => self.decrement_selection(),
+                KeyCode::Up => self.decrement_selection(),
+
+                KeyCode::Char('u') => self.tasks = self.client.get_tasks(),
+
+                KeyCode::Char('c') => self.complete_current_task(),
+                KeyCode::Delete => self.complete_current_task(),
+
+                KeyCode::Char('n') => self.create_task(),
+
+                KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
             },
         }
@@ -134,7 +169,7 @@ impl App {
 
     fn complete_current_task(&mut self) {
         let current = self.position.selected().unwrap_or(0);
-        if self.tasks.len() == 0 {
+        if self.tasks.is_empty() {
             return;
         };
         self.client.complete_task(&self.tasks[current]);

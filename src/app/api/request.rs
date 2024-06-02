@@ -26,7 +26,7 @@ pub fn delete(token: &String, client: &Client, url: String) {
         .send()
         .unwrap();
     match response.status().as_u16() {
-        204 => return,
+        204 => (),
         400 => panic!("400 bad request"),
         403 => panic!("invalid authentication header - check your token is valid"),
         500..=599 => panic!("TODOIST server had an internal error"),
@@ -48,8 +48,8 @@ pub fn post(token: &String, client: &Client, url: String, body: String) -> Optio
         .send()
         .unwrap();
     match response.status().as_u16() {
-        200 => return Some(response.text().unwrap()),
-        204 => return None,
+        200 => Some(response.text().unwrap()),
+        204 => None,
         400 => panic!("400 bad request"),
         403 => panic!("invalid authentication header - check your token is valid"),
         500..=599 => panic!("TODOIST server had an internal error"),
@@ -72,7 +72,7 @@ pub fn post_quickadd(token: &String, client: &Client, url: String, text: String)
         .send()
         .unwrap();
     match response.status().as_u16() {
-        200 => return Some(response.text().unwrap()),
+        200 => Some(response.text().unwrap()),
         400 => panic!("400 bad request"),
         401 => panic!("invalid authentication header - check your token is valid"),
         500..=599 => panic!("TODOIST server had an internal error"),
