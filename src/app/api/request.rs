@@ -6,7 +6,9 @@ pub fn get(token: &String, client: &Client, url: &str) -> String {
         .get(url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
-        .unwrap();
+        .expect(
+            "Could not make an API request, most lighly an issue with your internet connection",
+        );
     match response.status().as_u16() {
         200 => response.text().unwrap(),
         400 => panic!("400 bad request"),
@@ -24,7 +26,9 @@ pub fn delete(token: &String, client: &Client, url: String) {
         .delete(url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
-        .unwrap();
+        .expect(
+            "Could not make an API request, most lighly an issue with your internet connection",
+        );
     match response.status().as_u16() {
         204 => (),
         400 => panic!("400 bad request"),
@@ -46,7 +50,9 @@ pub fn post(token: &String, client: &Client, url: String, body: String) -> Optio
         .header(CONTENT_TYPE, "application/json")
         .header("X-REQUEST-ID", "tetringsts")
         .send()
-        .unwrap();
+        .expect(
+            "Could not make an API request, most lighly an issue with your internet connection",
+        );
     match response.status().as_u16() {
         200 => Some(response.text().unwrap()),
         204 => None,
@@ -70,7 +76,9 @@ pub fn post_quickadd(token: &String, client: &Client, url: String, text: String)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
         .send()
-        .unwrap();
+        .expect(
+            "Could not make an API request, most lighly an issue with your internet connection",
+        );
     match response.status().as_u16() {
         200 => Some(response.text().unwrap()),
         400 => panic!("400 bad request"),
