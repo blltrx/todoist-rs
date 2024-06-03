@@ -5,6 +5,7 @@ use ratatui::{
 };
 
 pub fn render_normal_ui(frame: &mut Frame, tasks: &Vec<String>, position: &mut ListState) {
+    //! Using &mut Frame renders the main list as a stateful widget
     frame.render_stateful_widget(make_list_widget(tasks), frame.size(), position)
 }
 
@@ -14,7 +15,7 @@ pub fn render_create_ui(
     position: &mut ListState,
     create_input: &str,
 ) {
-    // create vertical layout
+    //! Using &mut Frame renders the main list as a stateful widget, and the input box widget.
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Max(4), Constraint::Fill(1)])
@@ -30,6 +31,7 @@ pub fn render_info_ui(
     position: &mut ListState,
     taskinfo: String,
 ) {
+    //! Using &mut Frame renders the main list as a stateful widget and the info panel widget.
     let layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])

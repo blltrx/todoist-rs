@@ -4,9 +4,10 @@ use ratatui::widgets::*;
 use std::io;
 
 use crate::tui;
-pub mod api;
-pub mod ui;
+mod api;
+mod ui;
 
+/// App client struct containing all app state variables
 pub struct App {
     client: api::Api,
     position: ListState,
@@ -23,8 +24,9 @@ enum Mode {
 }
 
 impl App {
-    /// initialise app struct with api client
     pub fn new(todoist_token: String) -> App {
+        //! Returns a newly created App struct, including initiating the API client.
+        //! Consumes a String that is the API Token for the Todoist API.
         App {
             client: api::Api::new(todoist_token),
             position: ListState::default(),
@@ -35,8 +37,13 @@ impl App {
         }
     }
 
-    /// runs the main loop for the app
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
+        //! Starts the main loop for the app, returning an empty result.
+        //! Takes a &mut tui::Tui used to render the UI.
+        //! ```
+        //! let mut app = App::new(token);
+        //! let app_result = app.run(terminal);
+        //! ```
         self.tasks = self.client.get_tasks();
         self.position.select(Some(0));
         while !self.exit {
@@ -49,32 +56,26 @@ impl App {
 
     // renders the task list widget
     fn render_frame(&mut self, frame: &mut ratatui::Frame) {
+        let tasks = &self
+            .tasks
+            .iter()
+            .map(|task| task.to_list_string(frame.size().width))
+            .collect();
+
         match self.mode {
             // normal mode just displays the task list
-            Mode::Normal => ui::render_normal_ui(
-                frame,
-                &api::tasklist_to_strings(&self.tasks, frame.size().width),
-                &mut self.position,
-            ),
+            Mode::Normal => ui::render_normal_ui(frame, tasks, &mut self.position),
 
             // create task mode
-            Mode::Create => ui::render_create_ui(
-                frame,
-                &api::tasklist_to_strings(&self.tasks, frame.size().width),
-                &mut self.position,
-                &self.create_task_input,
-            ),
+            Mode::Create => {
+                ui::render_create_ui(frame, tasks, &mut self.position, &self.create_task_input)
+            }
             Mode::Info => {
                 let mut taskinfo = String::new();
                 if let Some(current_task_index) = self.position.selected() {
-                    taskinfo = api::task_to_string(&self.tasks[current_task_index])
+                    taskinfo = self.tasks[current_task_index].to_info_string()
                 };
-                ui::render_info_ui(
-                    frame,
-                    &api::tasklist_to_strings(&self.tasks, frame.size().width),
-                    &mut self.position,
-                    taskinfo,
-                )
+                ui::render_info_ui(frame, tasks, &mut self.position, taskinfo)
             }
         }
     }
