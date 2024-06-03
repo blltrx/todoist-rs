@@ -89,7 +89,10 @@ fn make_input_widget(current_input: &str) -> Paragraph {
 }
 
 fn make_info_widget(taskinfo: &str) -> Paragraph {
-    let footer = Title::from(Line::from(vec![" <backspace> ".blue(), "to close ".into()]));
+    let footer = Title::from(Line::from(vec![
+        " <backspace> ".magenta(),
+        "to close ".into(),
+    ]));
     return Paragraph::new(taskinfo)
         .block(
             Block::bordered()

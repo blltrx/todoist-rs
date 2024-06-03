@@ -2,22 +2,28 @@ use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 pub mod request;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Due {
     pub date: String,
     pub string: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Task {
     pub id: String,
     pub content: String,
     pub description: String,
-    pub is_completed: bool,
+    pub checked: bool,
     pub priority: u8,
     pub due: Option<Due>,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+struct SyncResponse {
+    full_sync: bool,
+    items: Vec<Task>,
+    sync_token: String,
+}
 #[allow(dead_code)]
 pub struct Api {
     token: String,
@@ -32,81 +38,56 @@ impl Api {
         }
     }
 
-    pub fn get_tasks(&self) -> Vec<Task> {
-        let json = request::get(
+    pub fn complete_task(&self, task: &Task) {
+        let command = format!(
+            "[{{
+                \"type\": \"item_close\", 
+                \"uuid\": \"{}\", 
+                \"args\": {{
+                    \"id\": \"{}\" 
+                }}
+            }}]",
+            uuid::Uuid::new_v4(),
+            task.id
+        );
+        let url = "https://api.todoist.com/sync/v9/sync".to_string();
+        let _ = request::sync_post(
             &self.token,
             &self.client,
-            "https://api.todoist.com/rest/v2/tasks",
+            url,
+            &[(String::from("commands"), command)],
         );
-        let mut task_list: Vec<Task> = serde_json::from_str::<Vec<Task>>(&json).unwrap();
+    }
+
+    pub fn quick_add(&self, quick: String) {
+        let url = "https://api.todoist.com/sync/v9/quick/add".to_string();
+        let _ = request::sync_post(
+            &self.token,
+            &self.client,
+            url,
+            &[(String::from("text"), quick)],
+        );
+    }
+
+    pub fn get_tasks(&self) -> Vec<Task> {
+        let url = "https://api.todoist.com/sync/v9/sync".to_string();
+        let res = request::sync_post(
+            &self.token,
+            &self.client,
+            url,
+            &[
+                (String::from("sync_token"), String::from("*")),
+                (String::from("resource_types"), String::from("[\"items\"]")),
+            ],
+        );
+
+        let mut task_list = serde_json::from_str::<SyncResponse>(&res.unwrap())
+            .expect("json does not match SyncResponse struct")
+            .items;
         task_list.sort_by_key(|task| task.priority);
         task_list.reverse();
 
         task_list
-    }
-
-    pub fn delete_task(&self, task: &Task) {
-        let url = format!("https://api.todoist.com/rest/v2/tasks/{}", task.id);
-        request::delete(&self.token, &self.client, url);
-    }
-
-    fn add_task(&self, task: Task) -> Task {
-        let json = format!(
-            "{{
-            \"content\": \"{}\",
-            \"due_string\": \"{}\",
-            \"due_lang\" : \"en\",
-            \"description\": \"{}\",
-            \"priority\": {}
-            }}",
-            task.content,
-            <Option<Due> as Clone>::clone(&task.due).unwrap().string,
-            task.description,
-            task.priority
-        );
-        let response = request::post(
-            &self.token,
-            &self.client,
-            String::from("https://api.todoist.com/rest/v2/tasks"),
-            json,
-        )
-        .unwrap();
-        let task: Task = serde_json::from_str(&response).unwrap();
-        task
-    }
-
-    pub fn new_task(
-        &self,
-        content: String,
-        description: String,
-        mut priority: u8,
-        due_string: String,
-    ) {
-        if priority > 4 {
-            priority = 4
-        };
-        let task = Task {
-            id: String::from("placeholder"),
-            content,
-            description,
-            is_completed: false,
-            priority,
-            due: Some(Due {
-                date: String::from("placeholder"),
-                string: due_string,
-            }),
-        };
-        self.add_task(task);
-    }
-
-    pub fn complete_task(&self, task: &Task) {
-        let url = format!("https://api.todoist.com/rest/v2/tasks/{}/close", task.id);
-        let _ = request::post(&self.token, &self.client, url, String::new());
-    }
-
-    pub fn quick_add(&self, quick: String) {
-        let url = String::from("https://api.todoist.com/sync/v9/quick/add");
-        let _ = request::post_quickadd(&self.token, &self.client, url, quick);
     }
 }
 
