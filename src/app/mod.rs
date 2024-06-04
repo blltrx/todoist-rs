@@ -44,7 +44,7 @@ impl App {
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
-        self.tasks = self.client.get_tasks();
+        self.tasks = self.client.get_tasks().unwrap();
         self.position.select(Some(0));
         while !self.exit {
             // calls the ui module to create and render widgets
@@ -102,7 +102,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks(),
+                KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
 
                 KeyCode::Char('c') => self.complete_current_task(),
                 KeyCode::Delete => self.complete_current_task(),
@@ -135,7 +135,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks(),
+                KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
 
                 KeyCode::Char('c') => self.complete_current_task(),
                 KeyCode::Delete => self.complete_current_task(),
@@ -174,12 +174,12 @@ impl App {
             return;
         };
         self.client.complete_task(&self.tasks[current]);
-        self.tasks = self.client.get_tasks();
+        self.tasks = self.client.get_tasks().unwrap();
     }
 
     fn add_task(&mut self) {
         self.client.quick_add(self.create_task_input.to_owned());
         self.create_task_input = String::new();
-        self.tasks = self.client.get_tasks();
+        self.tasks = self.client.get_tasks().unwrap();
     }
 }
