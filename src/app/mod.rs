@@ -1,8 +1,6 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::*;
 
-use std::io;
-
 use crate::tui;
 mod api;
 mod ui;
@@ -37,18 +35,22 @@ impl App {
         }
     }
 
-    pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
+    pub fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), u16> {
         //! Starts the main loop for the app, returning an empty result.
         //! Takes a &mut tui::Tui used to render the UI.
         //! ```
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
+<<<<<<< HEAD
         self.tasks = self.client.get_tasks().unwrap();
+=======
+        self.tasks = self.client.get_tasks()?;
+>>>>>>> 155aaee (start error handling)
         self.position.select(Some(0));
         while !self.exit {
             // calls the ui module to create and render widgets
-            terminal.draw(|frame| self.render_frame(frame))?;
+            let _ = terminal.draw(|frame| self.render_frame(frame));
             self.handle_events()?;
         }
         Ok(())
@@ -80,17 +82,18 @@ impl App {
         }
     }
 
-    fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
+    fn handle_events(&mut self) -> Result<(), u16> {
+        match event::read() {
+            Ok(Event::Key(key_event)) if key_event.kind == KeyEventKind::Press => {
+                self.handle_key_event(key_event)?
             }
-            _ => {}
+            Ok(_) => {}
+            Err(_) => return Err(4),
         };
         Ok(())
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(), u16> {
         match self.mode {
             Mode::Normal => match key_event.code {
                 KeyCode::Char('q') => self.exit = true,
@@ -102,10 +105,13 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
+<<<<<<< HEAD
                 KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
+=======
+                KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
+>>>>>>> 155aaee (start error handling)
 
-                KeyCode::Char('c') => self.complete_current_task(),
-                KeyCode::Delete => self.complete_current_task(),
+                KeyCode::Char('c') => self.complete_current_task()?,
 
                 KeyCode::Enter => self.mode = Mode::Info,
 
@@ -115,7 +121,7 @@ impl App {
             // mode to allow typing for input
             Mode::Create => match key_event.code {
                 KeyCode::Enter => {
-                    self.add_task();
+                    self.add_task()?;
                     self.mode = Mode::Normal
                 }
                 // transmitts any character types to the input attribute
@@ -135,17 +141,21 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
+<<<<<<< HEAD
                 KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
+=======
+                KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
+>>>>>>> 155aaee (start error handling)
 
-                KeyCode::Char('c') => self.complete_current_task(),
-                KeyCode::Delete => self.complete_current_task(),
+                KeyCode::Char('c') => self.complete_current_task()?,
 
                 KeyCode::Char('n') => self.mode = Mode::Create,
 
                 KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
             },
-        }
+        };
+        Ok(())
     }
 
     /// selection interaction
@@ -168,18 +178,28 @@ impl App {
 
     /// API interaction
 
-    fn complete_current_task(&mut self) {
+    fn complete_current_task(&mut self) -> Result<(), u16> {
         let current = self.position.selected().unwrap_or(0);
         if self.tasks.is_empty() {
-            return;
+            return Ok(());
         };
         self.client.complete_task(&self.tasks[current]);
+<<<<<<< HEAD
         self.tasks = self.client.get_tasks().unwrap();
+=======
+        self.tasks = self.client.get_tasks()?;
+        Ok(())
+>>>>>>> 155aaee (start error handling)
     }
 
-    fn add_task(&mut self) {
+    fn add_task(&mut self) -> Result<(), u16> {
         self.client.quick_add(self.create_task_input.to_owned());
         self.create_task_input = String::new();
+<<<<<<< HEAD
         self.tasks = self.client.get_tasks().unwrap();
+=======
+        self.tasks = self.client.get_tasks()?;
+        Ok(())
+>>>>>>> 155aaee (start error handling)
     }
 }
