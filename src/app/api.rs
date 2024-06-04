@@ -47,7 +47,10 @@ impl Api {
             Err(_) => return Err(3),
         };
         match response.status().as_u16() {
-            200 => Ok(response.text().unwrap()),
+            200 => Ok(match response.text() {
+                Ok(test) => test,
+                Err(_) => return Err(6),
+            }),
             _ => Err(response.status().as_u16()),
         }
     }
