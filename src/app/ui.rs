@@ -87,7 +87,8 @@ fn make_input_widget(current_input: &str) -> Paragraph {
                     .alignment(Alignment::Center)
                     .position(Position::Bottom),
             ),
-        );
+        )
+        .wrap(Wrap { trim: true });
 }
 
 fn make_info_widget(taskinfo: &str) -> Paragraph {
