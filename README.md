@@ -12,4 +12,3 @@ To use it, set the environment variable `TODOIST_TOKEN` to your [Todoist API tok
 
 todo list
 + allow input for description on task creation
-+ consistent API
