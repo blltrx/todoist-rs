@@ -10,6 +10,7 @@ pub struct App {
     client: api::Api,
     position: ListState,
     tasks: Vec<api::Task>,
+    current_sync: String,
     mode: Mode,
     create_task_input: String,
     exit: bool,
@@ -30,6 +31,7 @@ impl App {
             position: ListState::default(),
             tasks: Vec::new(),
             mode: Mode::Normal,
+            current_sync: String::from("*"),
             create_task_input: String::new(),
             exit: false,
         }
@@ -42,11 +44,7 @@ impl App {
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
-<<<<<<< HEAD
-        self.tasks = self.client.get_tasks().unwrap();
-=======
         self.tasks = self.client.get_tasks()?;
->>>>>>> 155aaee (start error handling)
         self.position.select(Some(0));
         while !self.exit {
             // calls the ui module to create and render widgets
@@ -105,11 +103,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-<<<<<<< HEAD
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
-=======
                 KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
->>>>>>> 155aaee (start error handling)
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
@@ -141,11 +135,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-<<<<<<< HEAD
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks().unwrap(),
-=======
                 KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
->>>>>>> 155aaee (start error handling)
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
@@ -184,22 +174,14 @@ impl App {
             return Ok(());
         };
         self.client.complete_task(&self.tasks[current]);
-<<<<<<< HEAD
-        self.tasks = self.client.get_tasks().unwrap();
-=======
         self.tasks = self.client.get_tasks()?;
         Ok(())
->>>>>>> 155aaee (start error handling)
     }
 
     fn add_task(&mut self) -> Result<(), u16> {
         self.client.quick_add(self.create_task_input.to_owned());
         self.create_task_input = String::new();
-<<<<<<< HEAD
-        self.tasks = self.client.get_tasks().unwrap();
-=======
         self.tasks = self.client.get_tasks()?;
         Ok(())
->>>>>>> 155aaee (start error handling)
     }
 }
