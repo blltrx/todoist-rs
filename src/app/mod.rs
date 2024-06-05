@@ -44,7 +44,7 @@ impl App {
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
-        self.tasks = self.client.get_tasks()?;
+        (self.tasks, self.current_sync) = self.client.get_tasks("*")?;
         self.position.select(Some(0));
         while !self.exit {
             // calls the ui module to create and render widgets
@@ -103,7 +103,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
+                KeyCode::Char('u') => self.sync_tasks()?,
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
@@ -135,7 +135,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('u') => self.tasks = self.client.get_tasks()?,
+                KeyCode::Char('u') => self.sync_tasks()?,
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
@@ -168,20 +168,32 @@ impl App {
 
     /// API interaction
 
+    fn sync_tasks(&mut self) -> Result<(), u16> {
+        let (new_tasks, sync_token) = self.client.get_tasks(&self.current_sync)?;
+        if self.current_sync == String::from("*") {
+            self.tasks = new_tasks
+        } else {
+            self.tasks.extend(new_tasks);
+        }
+        self.current_sync = sync_token;
+        Ok(())
+    }
+
     fn complete_current_task(&mut self) -> Result<(), u16> {
-        let current = self.position.selected().unwrap_or(0);
+        let current_index = self.position.selected().unwrap_or(0);
         if self.tasks.is_empty() {
             return Ok(());
         };
-        self.client.complete_task(&self.tasks[current])?;
-        self.tasks = self.client.get_tasks()?;
+        self.current_sync = self.client.complete_task(&self.tasks[current_index])?;
+        self.tasks.remove(current_index);
         Ok(())
     }
 
     fn add_task(&mut self) -> Result<(), u16> {
-        self.client.quick_add(self.create_task_input.to_owned())?;
+        let new_task = self.client.quick_add(self.create_task_input.to_owned())?;
+        self.tasks.push(new_task);
         self.create_task_input = String::new();
-        self.tasks = self.client.get_tasks()?;
+        self.current_sync = String::from("*");
         Ok(())
     }
 }

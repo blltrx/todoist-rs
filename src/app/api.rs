@@ -41,6 +41,14 @@ pub struct Api {
 }
 
 impl Api {
+    pub fn new(token: String) -> Api {
+        //! Create new API client struct. Consumes an API auth token as a String
+        Api {
+            token,
+            client: reqwest::blocking::Client::new(),
+        }
+    }
+
     fn post(&self, url: String, form_fields: &[(String, String)]) -> Result<String, u16> {
         let response = match self
             .client
@@ -62,15 +70,28 @@ impl Api {
         }
     }
 
-    pub fn new(token: String) -> Api {
-        //! Create new API client struct. Consumes an API auth token as a String
-        Api {
-            token,
-            client: reqwest::blocking::Client::new(),
-        }
+    pub fn get_tasks(&self, sync_token: &str) -> Result<(Vec<Task>, String), u16> {
+        //! Get a vector of all tasks
+        let url = "https://api.todoist.com/sync/v9/sync".to_string();
+        let res = self.post(
+            url,
+            &[
+                (String::from("sync_token"), String::from(sync_token)),
+                (String::from("resource_types"), String::from("[\"items\"]")),
+            ],
+        );
+        let syncresponse = match serde_json::from_str::<SyncResponse>(&res?) {
+            Ok(syncresponse) => syncresponse,
+            Err(_) => return Err(2),
+        };
+        let mut task_list = syncresponse.items;
+        task_list.sort_by_key(|task| task.priority);
+        task_list.reverse();
+
+        Ok((task_list, syncresponse.sync_token))
     }
 
-    pub fn complete_task(&self, task: &Task) -> Result<(), u16> {
+    pub fn complete_task(&self, task: &Task) -> Result<String, u16> {
         //! Mark task as complete based on Task object
         let command = format!(
             "[{{
@@ -84,35 +105,23 @@ impl Api {
             task.id
         );
         let url = "https://api.todoist.com/sync/v9/sync".to_string();
-        self.post(url, &[(String::from("commands"), command)])?;
-        Ok(())
-    }
-
-    pub fn quick_add(&self, quick: String) -> Result<(), u16> {
-        //! Create a new task using the quick add method, allowing for shorthand for due date, label, and priority
-        let url = "https://api.todoist.com/sync/v9/quick/add".to_string();
-        self.post(url, &[(String::from("text"), quick)])?;
-        Ok(())
-    }
-
-    pub fn get_tasks(&self) -> Result<Vec<Task>, u16> {
-        //! Get a vector of all tasks
-        let url = "https://api.todoist.com/sync/v9/sync".to_string();
-        let res = self.post(
-            url,
-            &[
-                (String::from("sync_token"), String::from("*")),
-                (String::from("resource_types"), String::from("[\"items\"]")),
-            ],
-        );
-        let mut task_list = match serde_json::from_str::<SyncResponse>(&res?) {
-            Ok(syncresponse) => syncresponse.items,
+        let res = self.post(url, &[(String::from("commands"), command)]);
+        let writeresponse = match serde_json::from_str::<WriteResponse>(&res?) {
+            Ok(syncresponse) => syncresponse,
             Err(_) => return Err(2),
         };
-        task_list.sort_by_key(|task| task.priority);
-        task_list.reverse();
+        Ok(writeresponse.sync_token)
+    }
 
-        Ok(task_list)
+    pub fn quick_add(&self, quick: String) -> Result<Task, u16> {
+        //! Create a new task using the quick add method, allowing for shorthand for due date, label, and priority
+        let url = "https://api.todoist.com/sync/v9/quick/add".to_string();
+        let res = self.post(url, &[(String::from("text"), quick)]);
+        let writeresponse = match serde_json::from_str::<Task>(&res?) {
+            Ok(syncresponse) => syncresponse,
+            Err(_) => return Err(2),
+        };
+        Ok(writeresponse)
     }
 }
 
