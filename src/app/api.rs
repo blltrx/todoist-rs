@@ -27,6 +27,13 @@ struct SyncResponse {
     sync_token: String,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+/// Represents json returned from a write request
+struct WriteResponse {
+    sync_token: String,
+    sync_status: std::collections::HashMap<String, String>,
+}
+
 /// API client struct
 pub struct Api {
     token: String,
@@ -63,7 +70,7 @@ impl Api {
         }
     }
 
-    pub fn complete_task(&self, task: &Task) {
+    pub fn complete_task(&self, task: &Task) -> Result<(), u16> {
         //! Mark task as complete based on Task object
         let command = format!(
             "[{{
@@ -77,13 +84,15 @@ impl Api {
             task.id
         );
         let url = "https://api.todoist.com/sync/v9/sync".to_string();
-        let _ = self.post(url, &[(String::from("commands"), command)]);
+        self.post(url, &[(String::from("commands"), command)])?;
+        Ok(())
     }
 
-    pub fn quick_add(&self, quick: String) {
+    pub fn quick_add(&self, quick: String) -> Result<(), u16> {
         //! Create a new task using the quick add method, allowing for shorthand for due date, label, and priority
         let url = "https://api.todoist.com/sync/v9/quick/add".to_string();
-        let _ = self.post(url, &[(String::from("text"), quick)]);
+        self.post(url, &[(String::from("text"), quick)])?;
+        Ok(())
     }
 
     pub fn get_tasks(&self) -> Result<Vec<Task>, u16> {

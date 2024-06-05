@@ -173,13 +173,13 @@ impl App {
         if self.tasks.is_empty() {
             return Ok(());
         };
-        self.client.complete_task(&self.tasks[current]);
+        self.client.complete_task(&self.tasks[current])?;
         self.tasks = self.client.get_tasks()?;
         Ok(())
     }
 
     fn add_task(&mut self) -> Result<(), u16> {
-        self.client.quick_add(self.create_task_input.to_owned());
+        self.client.quick_add(self.create_task_input.to_owned())?;
         self.create_task_input = String::new();
         self.tasks = self.client.get_tasks()?;
         Ok(())

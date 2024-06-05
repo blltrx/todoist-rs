@@ -49,6 +49,7 @@ fn main() {
         Err(3) => {exit_in_tui("HTTP POST failed, maybe check your internet connection?", 3)}
         Err(4) => {exit_in_tui("Crossterm incorrectly read an event, is your terminal supported by crossterm?", 4)}
         Err(6) => {exit_in_tui("HTTP POST response failed to be read using text(), idk why sorry", 6)}
+        Err(401) => {exit_in_tui("Authentication failed in an API request, please check that your token (echo $TODOIST_TOKEN) is valid", 401)}
         Err(x) => {exit_in_tui("HTTP error code if between 200 and 600, otherwise unknown (inspect error code with $?, $status or whatever your shell uses to find out what one)", x)}
     };
     // return terminal to default state
