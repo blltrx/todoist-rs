@@ -12,7 +12,6 @@ mod tui;
 // 3: reqwest post could not send(), most lightly a network error -> check internet connection
 // 4: crossterm failed to read event correctly
 // 5*: Tui could not be initialised
-// 6: response.text() failed in post request
 // 200-600: represent their respective HTTP status codes. Only 200 OK does not produce an error
 
 fn exit_in_tui(message: &str, code: u16) {
@@ -48,7 +47,6 @@ fn main() {
         Err(2) => {exit_in_tui("Response from server was unexpected, and could not be parsed from JSON into the nessasary objects", 2)}
         Err(3) => {exit_in_tui("HTTP POST failed, maybe check your internet connection?", 3)}
         Err(4) => {exit_in_tui("Crossterm incorrectly read an event, is your terminal supported by crossterm?", 4)}
-        Err(6) => {exit_in_tui("HTTP POST response failed to be read using text(), idk why sorry", 6)}
         Err(401) => {exit_in_tui("Authentication failed in an API request, please check that your token (echo $TODOIST_TOKEN) is valid", 401)}
         Err(x) => {exit_in_tui("HTTP error code if between 200 and 600, otherwise unknown (inspect error code with $?, $status or whatever your shell uses to find out what one)", x)}
     };

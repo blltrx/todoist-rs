@@ -6,7 +6,7 @@ use ratatui::{
 
 pub fn render_normal_ui(frame: &mut Frame, tasks: &Vec<String>, position: &mut ListState) {
     //! Using &mut Frame renders the main list as a stateful widget
-    frame.render_stateful_widget(make_list_widget(tasks), frame.size(), position)
+    frame.render_stateful_widget(list(tasks), frame.size(), position)
 }
 
 pub fn render_create_ui(
@@ -21,8 +21,8 @@ pub fn render_create_ui(
         .constraints(vec![Constraint::Max(4), Constraint::Fill(1)])
         .split(frame.size());
 
-    frame.render_widget(make_input_widget(create_input), layout[0]);
-    frame.render_stateful_widget(make_list_widget(tasks), layout[1], position)
+    frame.render_widget(input_box(create_input), layout[0]);
+    frame.render_stateful_widget(list(tasks), layout[1], position)
 }
 
 pub fn render_info_ui(
@@ -36,11 +36,12 @@ pub fn render_info_ui(
         .direction(Direction::Horizontal)
         .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(frame.size());
-    frame.render_stateful_widget(make_list_widget(tasks), layout[0], position);
-    frame.render_widget(make_info_widget(&taskinfo), layout[1]);
+
+    frame.render_stateful_widget(list(tasks), layout[0], position);
+    frame.render_widget(infomation_panel(&taskinfo), layout[1]);
 }
 
-fn make_list_widget(items: &Vec<String>) -> List {
+fn list(items: &Vec<String>) -> List {
     // setup formatting
     let header = Title::from(" todo ".bold().magenta());
     let footer = Title::from(Line::from(vec![
@@ -71,7 +72,7 @@ fn make_list_widget(items: &Vec<String>) -> List {
         .highlight_spacing(HighlightSpacing::Always);
 }
 
-fn make_input_widget(current_input: &str) -> Paragraph {
+fn input_box(current_input: &str) -> Paragraph {
     let footer = Title::from(Line::from(vec![
         " delete ".blue(),
         "to exit create mode - ".into(),
@@ -91,11 +92,12 @@ fn make_input_widget(current_input: &str) -> Paragraph {
         .wrap(Wrap { trim: true });
 }
 
-fn make_info_widget(taskinfo: &str) -> Paragraph {
+fn infomation_panel(taskinfo: &str) -> Paragraph {
     let footer = Title::from(Line::from(vec![
         " <backspace> ".magenta(),
         "to close ".into(),
     ]));
+
     return Paragraph::new(taskinfo)
         .block(
             Block::bordered()

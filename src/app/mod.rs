@@ -10,7 +10,7 @@ pub struct App {
     client: api::Api,
     position: ListState,
     tasks: Vec<api::Task>,
-    current_sync: String,
+    current_sync_token: String,
     mode: Mode,
     create_task_input: String,
     exit: bool,
@@ -31,7 +31,7 @@ impl App {
             position: ListState::default(),
             tasks: Vec::new(),
             mode: Mode::Normal,
-            current_sync: String::from("*"),
+            current_sync_token: String::from("*"),
             create_task_input: String::new(),
             exit: false,
         }
@@ -44,7 +44,7 @@ impl App {
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
-        (self.tasks, self.current_sync) = self.client.get_tasks("*")?;
+        (self.tasks, self.current_sync_token) = self.client.get_tasks("*")?;
         self.position.select(Some(0));
         while !self.exit {
             // calls the ui module to create and render widgets
@@ -104,7 +104,7 @@ impl App {
                 KeyCode::Up => self.decrement_selection(),
 
                 KeyCode::Char('U') => {
-                    self.current_sync = String::from("*");
+                    self.current_sync_token = String::from("*");
                     self.sync_tasks()?
                 }
 
@@ -156,18 +156,18 @@ impl App {
 
     fn sync_tasks(&mut self) -> Result<(), u16> {
         let (new_tasks, sync_token) = loop {
-            match self.client.get_tasks(&self.current_sync) {
+            match self.client.get_tasks(&self.current_sync_token) {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
             }
         };
-        if self.current_sync == "*" {
+        if self.current_sync_token == "*" {
             self.tasks = new_tasks
         } else {
             self.tasks.extend(new_tasks);
         }
-        self.current_sync = sync_token;
+        self.current_sync_token = sync_token;
         Ok(())
     }
 
@@ -176,7 +176,7 @@ impl App {
         if self.tasks.is_empty() {
             return Ok(());
         };
-        self.current_sync = loop {
+        self.current_sync_token = loop {
             match self.client.complete_task(&self.tasks[current_index]) {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
@@ -197,7 +197,7 @@ impl App {
         };
         self.tasks.push(new_task);
         self.create_task_input = String::new();
-        self.current_sync = String::from("*");
+        self.current_sync_token = String::from("*");
         Ok(())
     }
 }

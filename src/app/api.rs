@@ -62,10 +62,7 @@ impl Api {
             Err(_) => return Err(3),
         };
         match response.status().as_u16() {
-            200 => Ok(match response.text() {
-                Ok(test) => test,
-                Err(_) => return Err(6),
-            }),
+            200 => Ok(response.text().unwrap()),
             _ => Err(response.status().as_u16()),
         }
     }
@@ -73,14 +70,14 @@ impl Api {
     pub fn get_tasks(&self, sync_token: &str) -> Result<(Vec<Task>, String), u16> {
         //! Get a vector of all tasks and an updated sync token
         let url = "https://api.todoist.com/sync/v9/sync".to_string();
-        let res = self.post(
+        let result = self.post(
             url,
             &[
                 (String::from("sync_token"), String::from(sync_token)),
                 (String::from("resource_types"), String::from("[\"items\"]")),
             ],
         );
-        let syncresponse = match serde_json::from_str::<SyncResponse>(&res?) {
+        let syncresponse = match serde_json::from_str::<SyncResponse>(&result?) {
             Ok(syncresponse) => syncresponse,
             Err(_) => return Err(2),
         };
@@ -93,7 +90,7 @@ impl Api {
 
     pub fn complete_task(&self, task: &Task) -> Result<String, u16> {
         //! Mark task as complete based on Task object, returning the new sync token
-        let command = format!(
+        let todoist_command = format!(
             "[{{
                 \"type\": \"item_close\", 
                 \"uuid\": \"{}\", 
@@ -105,8 +102,8 @@ impl Api {
             task.id
         );
         let url = "https://api.todoist.com/sync/v9/sync".to_string();
-        let res = self.post(url, &[(String::from("commands"), command)]);
-        let writeresponse = match serde_json::from_str::<WriteResponse>(&res?) {
+        let result = self.post(url, &[(String::from("commands"), todoist_command)]);
+        let writeresponse = match serde_json::from_str::<WriteResponse>(&result?) {
             Ok(syncresponse) => syncresponse,
             Err(_) => return Err(2),
         };
@@ -116,8 +113,8 @@ impl Api {
     pub fn quick_add(&self, quick: String) -> Result<Task, u16> {
         //! Create a new task using the quick add method, allowing for shorthand for due date, label, and priority, returning the added task
         let url = "https://api.todoist.com/sync/v9/quick/add".to_string();
-        let res = self.post(url, &[(String::from("text"), quick)]);
-        let writeresponse = match serde_json::from_str::<Task>(&res?) {
+        let result = self.post(url, &[(String::from("text"), quick)]);
+        let writeresponse = match serde_json::from_str::<Task>(&result?) {
             Ok(syncresponse) => syncresponse,
             Err(_) => return Err(2),
         };
@@ -127,7 +124,7 @@ impl Api {
 
 impl Task {
     pub fn to_info_string(&self) -> String {
-        //! Produce a string suitable for the task list based on a task object
+        //! Produce a string suitable for the infomation pane based on a task object
         format!(
             "!!{} - {}\n\n{}\n\n---\n{}",
             self.priority,
@@ -141,13 +138,13 @@ impl Task {
     }
 
     pub fn to_list_string(&self, width: u16) -> String {
-        //! Produce a string suitable for the infomation pane based on a task object
-        let content_length: usize = (width as f32 * 0.6).round() as usize;
-        let (mut spacer_length, overflow) =
-            usize::overflowing_sub(width as usize, content_length + 17);
-        if overflow {
-            spacer_length = 2;
+        //! Produce a string suitable for the task list based on a task object
+        let content_length = (width as f32 * 0.6).round() as usize;
+        let spacer_length = match usize::overflowing_sub(width as usize, content_length + 17) {
+            (length, overflow) if !overflow => length,
+            _ => 2,
         };
+
         format!(
             "{:content_length$}{:spacer_length$}{:10}  {:1}",
             self.content
