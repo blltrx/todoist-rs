@@ -93,7 +93,7 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(), u16> {
         match self.mode {
-            Mode::Normal => match key_event.code {
+            Mode::Normal | Mode::Info => match key_event.code {
                 KeyCode::Char('q') => self.exit = true,
                 KeyCode::Esc => self.exit = true,
 
@@ -103,13 +103,18 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('u') => self.sync_tasks()?,
+                KeyCode::Char('U') => {
+                    self.current_sync = String::from("*");
+                    self.sync_tasks()?
+                }
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
                 KeyCode::Enter => self.mode = Mode::Info,
 
                 KeyCode::Char('n') => self.mode = Mode::Create,
+
+                KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
             },
             // mode to allow typing for input
@@ -123,25 +128,6 @@ impl App {
                 // delete last character from input attribute
                 KeyCode::Backspace => _ = self.create_task_input.pop(),
                 KeyCode::Delete => self.mode = Mode::Normal,
-                _ => {}
-            },
-            Mode::Info => match key_event.code {
-                KeyCode::Char('q') => self.exit = true,
-                KeyCode::Esc => self.exit = true,
-
-                KeyCode::Char('j') => self.increment_selection(),
-                KeyCode::Down => self.increment_selection(),
-
-                KeyCode::Char('k') => self.decrement_selection(),
-                KeyCode::Up => self.decrement_selection(),
-
-                KeyCode::Char('u') => self.sync_tasks()?,
-
-                KeyCode::Char('c') => self.complete_current_task()?,
-
-                KeyCode::Char('n') => self.mode = Mode::Create,
-
-                KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
             },
         };
@@ -169,8 +155,14 @@ impl App {
     /// API interaction
 
     fn sync_tasks(&mut self) -> Result<(), u16> {
-        let (new_tasks, sync_token) = self.client.get_tasks(&self.current_sync)?;
-        if self.current_sync == String::from("*") {
+        let (new_tasks, sync_token) = loop {
+            match self.client.get_tasks(&self.current_sync) {
+                Ok(result) => break result,
+                Err(500..=600) => continue,
+                Err(error_code) => return Err(error_code),
+            }
+        };
+        if self.current_sync == "*" {
             self.tasks = new_tasks
         } else {
             self.tasks.extend(new_tasks);
@@ -184,13 +176,25 @@ impl App {
         if self.tasks.is_empty() {
             return Ok(());
         };
-        self.current_sync = self.client.complete_task(&self.tasks[current_index])?;
+        self.current_sync = loop {
+            match self.client.complete_task(&self.tasks[current_index]) {
+                Ok(result) => break result,
+                Err(500..=600) => continue,
+                Err(error_code) => return Err(error_code),
+            }
+        };
         self.tasks.remove(current_index);
         Ok(())
     }
 
     fn add_task(&mut self) -> Result<(), u16> {
-        let new_task = self.client.quick_add(self.create_task_input.to_owned())?;
+        let new_task = loop {
+            match self.client.quick_add(self.create_task_input.clone()) {
+                Ok(result) => break result,
+                Err(500..=600) => continue,
+                Err(error_code) => return Err(error_code),
+            }
+        };
         self.tasks.push(new_task);
         self.create_task_input = String::new();
         self.current_sync = String::from("*");
