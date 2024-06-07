@@ -45,7 +45,7 @@ impl App {
         //! let app_result = app.run(terminal);
         //! ```
         (self.tasks, self.current_sync_token) = self.client.get_tasks("*")?;
-        self.position.select(Some(0));
+        self.decrement_selection();
         while !self.exit {
             // calls the ui module to create and render widgets
             let _ = terminal.draw(|frame| self.render_frame(frame));
@@ -137,6 +137,10 @@ impl App {
     /// selection interaction
 
     fn increment_selection(&mut self) {
+        if self.tasks.is_empty() {
+            self.position.select(None);
+            return;
+        }
         let current = self.position.selected().unwrap_or(0);
         let length = self.tasks.len();
         if current == length - 1 {
@@ -145,8 +149,13 @@ impl App {
         self.position.select(Some(current + 1));
     }
     fn decrement_selection(&mut self) {
+        if self.tasks.is_empty() {
+            self.position.select(None);
+            return;
+        }
         let current = self.position.selected().unwrap_or(0);
         if current == 0 {
+            self.position.select(Some(0));
             return;
         }
         self.position.select(Some(current - 1));
@@ -172,9 +181,9 @@ impl App {
     }
 
     fn complete_current_task(&mut self) -> Result<(), u16> {
-        let current_index = self.position.selected().unwrap_or(0);
-        if self.tasks.is_empty() {
-            return Ok(());
+        let current_index = match self.position.selected() {
+            Some(index) => index,
+            None => return Ok(()),
         };
         self.current_sync_token = loop {
             match self.client.complete_task(&self.tasks[current_index]) {
@@ -184,6 +193,7 @@ impl App {
             }
         };
         self.tasks.remove(current_index);
+        self.decrement_selection();
         Ok(())
     }
 
