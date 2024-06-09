@@ -15,6 +15,7 @@ pub struct Task {
     pub content: String,
     pub description: String,
     pub checked: bool,
+    pub labels: Vec<String>,
     pub priority: u8,
     pub due: Option<Due>,
 }
@@ -126,9 +127,10 @@ impl Task {
     pub fn to_info_string(&self) -> String {
         //! Produce a string suitable for the infomation pane based on a task object
         format!(
-            "!!{} - {}\n\n{}\n\n---\n{}",
+            "!!{} - {}\n@{}\n\n{}\n\n---\n{}",
             self.priority,
             self.content,
+            self.labels.join(","),
             self.description,
             match &self.due {
                 None => String::from("not due"),
