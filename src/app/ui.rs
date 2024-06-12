@@ -63,21 +63,24 @@ pub fn render_edit_ui(
         ])
         .split(frame.size());
 
-    frame.render_widget(input_box(title, String::from("title")), layout[0]);
     frame.render_widget(
-        input_box(description, String::from("description")),
+        multiple_input_box(title, String::from(" title ")),
+        layout[0],
+    );
+    frame.render_widget(
+        multiple_input_box(description, String::from(" description ")),
         layout[1],
     );
     frame.render_widget(
-        input_box(labels, String::from("labels (comma seperated)")),
+        multiple_input_box(labels, String::from(" labels (comma seperated) ")),
         layout[2],
     );
     frame.render_widget(
-        input_box(date, String::from("date (ISO formatted)")),
+        multiple_input_box(date, String::from(" date (ISO formatted) ")),
         layout[3],
     );
     frame.render_widget(
-        input_box(priority, String::from("priority (1-4 inclusive)")),
+        multiple_input_box(priority, String::from(" priority (1-4 inclusive) ")),
         layout[4],
     );
 }
@@ -115,9 +118,9 @@ fn list(items: &Vec<String>) -> List {
 
 fn input_box(current_input: &str, title: String) -> Paragraph {
     let footer = Title::from(Line::from(vec![
-        " delete ".blue(),
+        " delete ".light_blue(),
         "to exit mode - ".into(),
-        "enter ".blue(),
+        "enter ".light_blue(),
         "to confirm - ".into(),
     ]));
 
@@ -130,6 +133,13 @@ fn input_box(current_input: &str, title: String) -> Paragraph {
                     .position(Position::Bottom),
             ),
         )
+        .wrap(Wrap { trim: true });
+}
+
+fn multiple_input_box(current_input: &str, title: String) -> Paragraph {
+    return Paragraph::new(current_input)
+        .style(Style::default().fg(Color::White))
+        .block(Block::bordered().title(title.magenta()).light_blue())
         .wrap(Wrap { trim: true });
 }
 
@@ -148,8 +158,8 @@ fn infomation_panel(taskinfo: &str) -> Paragraph {
                         .alignment(Alignment::Center)
                         .position(Position::Bottom),
                 )
-                .style(Style::new().fg(Color::Blue)),
+                .style(Style::new().fg(Color::LightBlue))
+                .style(Style::new().fg(Color::White)),
         )
-        .style(Style::new().fg(Color::White))
         .wrap(Wrap { trim: true });
 }

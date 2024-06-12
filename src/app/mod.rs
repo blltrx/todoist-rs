@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::widgets::*;
 
 use crate::tui;
@@ -12,11 +12,8 @@ pub struct App {
     tasks: Vec<api::Task>,
     current_sync_token: String,
     mode: Mode,
-    task_content_input: String,
-    task_description_input: String,
-    task_label_input: String,
-    task_date_input: String,
-    task_priority_input: String,
+    inputs: Vec<String>,
+    input_position: usize,
     exit: bool,
 }
 
@@ -37,11 +34,14 @@ impl App {
             tasks: Vec::new(),
             mode: Mode::Normal,
             current_sync_token: String::from("*"),
-            task_content_input: String::new(),
-            task_description_input: String::new(),
-            task_label_input: String::new(),
-            task_date_input: String::new(),
-            task_priority_input: String::new(),
+            inputs: vec![
+                String::new(),
+                String::new(),
+                String::new(),
+                String::new(),
+                String::new(),
+            ],
+            input_position: 0,
             exit: false,
         }
     }
@@ -76,9 +76,7 @@ impl App {
             Mode::Normal => ui::render_normal_ui(frame, tasks, &mut self.position),
 
             // create task mode
-            Mode::Create => {
-                ui::render_create_ui(frame, tasks, &mut self.position, &self.task_content_input)
-            }
+            Mode::Create => ui::render_create_ui(frame, tasks, &mut self.position, &self.inputs[0]),
             Mode::Info => {
                 let mut taskinfo = String::new();
                 if let Some(current_task_index) = self.position.selected() {
@@ -97,26 +95,34 @@ impl App {
                         return;
                     }
                 };
-                (
-                    self.task_content_input,
-                    self.task_description_input,
-                    self.task_label_input,
-                    self.task_date_input,
-                    self.task_priority_input,
-                ) = (
-                    title,
-                    description,
-                    labels.join(", "),
-                    date,
-                    format!("{}", priority),
-                );
+                if self
+                    .inputs
+                    .iter()
+                    .map(|x| x == &String::new())
+                    .reduce(|a, b| a & b)
+                    .unwrap()
+                {
+                    (
+                        self.inputs[0],
+                        self.inputs[1],
+                        self.inputs[2],
+                        self.inputs[3],
+                        self.inputs[4],
+                    ) = (
+                        title,
+                        description,
+                        labels.join(", "),
+                        date,
+                        format!("{}", priority),
+                    )
+                };
                 ui::render_edit_ui(
                     frame,
-                    &self.task_content_input,
-                    &self.task_description_input,
-                    &self.task_label_input,
-                    &self.task_date_input,
-                    &self.task_priority_input,
+                    &self.inputs[0],
+                    &self.inputs[1],
+                    &self.inputs[2],
+                    &self.inputs[3],
+                    &self.inputs[4],
                 )
             }
         }
@@ -168,21 +174,49 @@ impl App {
                     self.mode = Mode::Normal
                 }
                 // transmitts any character types to the input attribute
-                KeyCode::Char(input_character) => self.task_content_input.push(input_character),
+                KeyCode::Char(input_character) => self.inputs[0].push(input_character),
                 // delete last character from input attribute
-                KeyCode::Backspace => _ = self.task_content_input.pop(),
+                KeyCode::Backspace => _ = self.inputs[0].pop(),
                 KeyCode::Delete => self.mode = Mode::Normal,
                 _ => {}
             },
-            Mode::Edit => match key_event.code {
-                KeyCode::Enter => self.edit_task()?,
+            Mode::Edit => match (key_event.code, key_event.modifiers) {
+                (KeyCode::Enter, KeyModifiers::NONE) => {
+                    self.edit_task()?;
+                    self.inputs = self.inputs.iter().map(|_| String::new()).collect();
+                    self.input_position = 0;
+                    self.mode = Mode::Normal;
+                }
+
+                (KeyCode::Tab, KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+                    if self.input_position == 4 {
+                        self.input_position = 0
+                    } else {
+                        self.input_position += 1
+                    }
+                }
+                // SHIFT is not working idk why i cant be asked sry
+                (KeyCode::Tab, KeyModifiers::SHIFT) | (KeyCode::Up, KeyModifiers::NONE) => {
+                    if self.input_position == 0 {
+                        self.input_position = 4
+                    } else {
+                        self.input_position -= 1
+                    }
+                }
 
                 // transmitts any character types to the input attribute
-                KeyCode::Char(input_character) => self.task_content_input.push(input_character),
+                (KeyCode::Char(input_character), KeyModifiers::NONE) => {
+                    self.inputs[self.input_position].push(input_character)
+                }
                 // delete last character from input attribute
-                KeyCode::Backspace => _ = self.task_content_input.pop(),
-                KeyCode::Delete => self.mode = Mode::Normal,
-                KeyCode::Esc => self.mode = Mode::Normal,
+                (KeyCode::Backspace, KeyModifiers::NONE) => {
+                    _ = self.inputs[self.input_position].pop()
+                }
+                (KeyCode::Delete, KeyModifiers::NONE) | (KeyCode::Esc, KeyModifiers::NONE) => {
+                    self.inputs = self.inputs.iter().map(|_| String::new()).collect();
+                    self.input_position = 0;
+                    self.mode = Mode::Normal;
+                }
                 _ => {}
             },
         };
@@ -254,14 +288,14 @@ impl App {
 
     fn add_task(&mut self) -> Result<(), u16> {
         let new_task = loop {
-            match self.client.quick_add(self.task_content_input.clone()) {
+            match self.client.quick_add(self.inputs[0].clone()) {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
             }
         };
         self.tasks.push(new_task);
-        self.task_content_input = String::new();
+        self.inputs[0] = String::new();
         self.current_sync_token = String::from("*");
         Ok(())
     }
@@ -269,21 +303,36 @@ impl App {
     fn edit_task(&mut self) -> Result<(), u16> {
         // get all data
         let id = self.tasks[self.position.selected().unwrap()].get_id();
-        let content = self.task_content_input.clone();
-        self.task_content_input = String::new();
-        let description = self.task_description_input.clone();
-        self.task_description_input = String::new();
-        let date = String::new();
-        let labels = Vec::new();
-        let priority = 4;
-        // verify user entry before api call TODO
+        let content = self.inputs[0].clone();
+        self.inputs[0] = String::new();
+        let description = self.inputs[1].clone();
+        self.inputs[1] = String::new();
+        let labels = self.inputs[2]
+            .clone()
+            .split(',')
+            .map(String::from)
+            .collect();
+        self.inputs[2] = String::new();
+        let date = self.inputs[3].clone();
+        self.inputs[3] = String::new();
+        let priority = match self.inputs[4].clone().parse() {
+            Ok(x) => x,
+            Err(_) => return Ok(()),
+        }; //TODO
+        self.inputs[0] = String::new();
 
         // create task object
         let task = api::Task::create_task_obj(id, content, description, date, labels, priority);
 
         // modify task api request
-        self.client.edit(task)?;
-
+        match self.client.edit(task.clone()) {
+            Ok(sync) => {
+                self.current_sync_token = sync;
+                self.tasks[self.position.selected().unwrap()] = task.clone();
+            }
+            // Err(2) => {}
+            Err(x) => return Err(x),
+        };
         Ok(())
     }
 }

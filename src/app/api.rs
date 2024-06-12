@@ -122,8 +122,50 @@ impl Api {
         Ok(writeresponse)
     }
 
-    pub fn edit(&self, new_task: Task) -> Result<(), u16> {
-        Ok(())
+    pub fn edit(&self, task: Task) -> Result<String, u16> {
+        //! Mark task as complete based on Task object, returning the new sync token
+        let todoist_command = format!(
+            "[{{
+                \"type\": \"item_update\", 
+                \"uuid\": \"{}\", 
+                \"args\": {{
+                    \"id\": \"{}\" ,
+                    \"content\": \"{}\",
+                    \"description\": \"{}\" ,
+                    \"labels\": [{}],
+                    \"priority\": \"{}\"
+                    {}
+                }}
+            }}]",
+            uuid::Uuid::new_v4(),
+            task.id,
+            task.content,
+            task.description,
+            task.labels
+                .iter()
+                .map(|x| format!("\"{}\"", x))
+                .collect::<Vec<String>>()
+                .join(","),
+            task.priority,
+            match task.due {
+                Some(due) => format!(
+                    "
+                        ,\"due\": {{
+                            \"date\": \"{}\"
+                        }}
+                    ",
+                    due.date
+                ),
+                None => String::new(),
+            }
+        );
+        let url = "https://api.todoist.com/sync/v9/sync".to_string();
+        let result = self.post(url, &[(String::from("commands"), todoist_command)]);
+        let writeresponse = match serde_json::from_str::<WriteResponse>(&result?) {
+            Ok(syncresponse) => syncresponse,
+            Err(_) => return Err(2),
+        };
+        Ok(writeresponse.sync_token)
     }
 }
 
@@ -136,7 +178,7 @@ impl Task {
         labels: Vec<String>,
         priority: u8,
     ) -> Task {
-        return Task {
+        Task {
             id,
             content,
             description,
@@ -147,7 +189,7 @@ impl Task {
                 date,
                 string: String::new(),
             }),
-        };
+        }
     }
 
     pub fn to_info_string(&self) -> String {
@@ -189,7 +231,7 @@ impl Task {
     }
 
     pub fn get_details(&self) -> (String, String, String, Vec<String>, String, u8) {
-        return (
+        (
             self.id.clone(),
             self.content.clone(),
             self.description.clone(),
@@ -198,11 +240,11 @@ impl Task {
                 None => String::new(),
                 Some(x) => x.date.clone(),
             },
-            self.priority.clone(),
-        );
+            self.priority,
+        )
     }
 
     pub fn get_id(&self) -> String {
-        return self.id.clone();
+        self.id.clone()
     }
 }
