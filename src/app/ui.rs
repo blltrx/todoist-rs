@@ -90,11 +90,11 @@ fn list(items: &Vec<String>) -> List {
     let header = Title::from(" todo ".bold().magenta());
     let footer = Title::from(Line::from(vec![
         " c ".magenta(),
-        "to complete - ".into(),
+        "to complete ─ ".into(),
         "n ".magenta(),
-        "to create - ".into(),
+        "to create ─ ".into(),
         "u ".magenta(),
-        "to update ".into(),
+        "to update ─ ".into(),
         "e ".magenta(),
         "to edit ".into(),
     ]));
@@ -121,9 +121,9 @@ fn list(items: &Vec<String>) -> List {
 fn input_box(current_input: &str, title: String) -> Paragraph {
     let footer = Title::from(Line::from(vec![
         " delete ".light_blue(),
-        "to exit mode - ".into(),
+        "to exit mode ─ ".into(),
         "enter ".light_blue(),
-        "to confirm - ".into(),
+        "to confirm ".into(),
     ]));
 
     return Paragraph::new(current_input)
