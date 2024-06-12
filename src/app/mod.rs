@@ -78,9 +78,12 @@ impl App {
             // create task mode
             Mode::Create => ui::render_create_ui(frame, tasks, &mut self.position, &self.inputs[0]),
             Mode::Info => {
-                let mut taskinfo = String::new();
-                if let Some(current_task_index) = self.position.selected() {
-                    taskinfo = self.tasks[current_task_index].to_info_string()
+                let taskinfo = match self.position.selected() {
+                    Some(index) => self.tasks[index].to_info_string(),
+                    None => {
+                        self.mode = Mode::Normal;
+                        return;
+                    }
                 };
                 ui::render_info_ui(frame, tasks, &mut self.position, taskinfo)
             }
@@ -102,19 +105,13 @@ impl App {
                     .reduce(|a, b| a & b)
                     .unwrap()
                 {
-                    (
-                        self.inputs[0],
-                        self.inputs[1],
-                        self.inputs[2],
-                        self.inputs[3],
-                        self.inputs[4],
-                    ) = (
+                    self.inputs = vec![
                         title,
                         description,
                         labels.join(", "),
                         date,
                         format!("{}", priority),
-                    )
+                    ]
                 };
                 ui::render_edit_ui(
                     frame,

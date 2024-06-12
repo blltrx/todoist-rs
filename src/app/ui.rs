@@ -95,6 +95,8 @@ fn list(items: &Vec<String>) -> List {
         "to create - ".into(),
         "u ".magenta(),
         "to update ".into(),
+        "e ".magenta(),
+        "to edit ".into(),
     ]));
 
     // create widget containter
