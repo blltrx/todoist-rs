@@ -12,7 +12,11 @@ pub struct App {
     tasks: Vec<api::Task>,
     current_sync_token: String,
     mode: Mode,
-    create_task_input: String,
+    task_content_input: String,
+    task_description_input: String,
+    task_label_input: String,
+    task_date_input: String,
+    task_priority_input: String,
     exit: bool,
 }
 
@@ -20,6 +24,7 @@ enum Mode {
     Normal,
     Create,
     Info,
+    Edit,
 }
 
 impl App {
@@ -32,7 +37,11 @@ impl App {
             tasks: Vec::new(),
             mode: Mode::Normal,
             current_sync_token: String::from("*"),
-            create_task_input: String::new(),
+            task_content_input: String::new(),
+            task_description_input: String::new(),
+            task_label_input: String::new(),
+            task_date_input: String::new(),
+            task_priority_input: String::new(),
             exit: false,
         }
     }
@@ -68,7 +77,7 @@ impl App {
 
             // create task mode
             Mode::Create => {
-                ui::render_create_ui(frame, tasks, &mut self.position, &self.create_task_input)
+                ui::render_create_ui(frame, tasks, &mut self.position, &self.task_content_input)
             }
             Mode::Info => {
                 let mut taskinfo = String::new();
@@ -76,6 +85,39 @@ impl App {
                     taskinfo = self.tasks[current_task_index].to_info_string()
                 };
                 ui::render_info_ui(frame, tasks, &mut self.position, taskinfo)
+            }
+
+            // edit mode to edit currently selected task
+            Mode::Edit => {
+                let (_, title, description, labels, date, priority) = match self.position.selected()
+                {
+                    Some(index) => self.tasks[index].get_details(),
+                    None => {
+                        self.mode = Mode::Normal;
+                        return;
+                    }
+                };
+                (
+                    self.task_content_input,
+                    self.task_description_input,
+                    self.task_label_input,
+                    self.task_date_input,
+                    self.task_priority_input,
+                ) = (
+                    title,
+                    description,
+                    labels.join(", "),
+                    date,
+                    format!("{}", priority),
+                );
+                ui::render_edit_ui(
+                    frame,
+                    &self.task_content_input,
+                    &self.task_description_input,
+                    &self.task_label_input,
+                    &self.task_date_input,
+                    &self.task_priority_input,
+                )
             }
         }
     }
@@ -114,6 +156,8 @@ impl App {
 
                 KeyCode::Char('n') => self.mode = Mode::Create,
 
+                KeyCode::Char('e') => self.mode = Mode::Edit,
+
                 KeyCode::Backspace => self.mode = Mode::Normal,
                 _ => {}
             },
@@ -124,10 +168,21 @@ impl App {
                     self.mode = Mode::Normal
                 }
                 // transmitts any character types to the input attribute
-                KeyCode::Char(input_character) => self.create_task_input.push(input_character),
+                KeyCode::Char(input_character) => self.task_content_input.push(input_character),
                 // delete last character from input attribute
-                KeyCode::Backspace => _ = self.create_task_input.pop(),
+                KeyCode::Backspace => _ = self.task_content_input.pop(),
                 KeyCode::Delete => self.mode = Mode::Normal,
+                _ => {}
+            },
+            Mode::Edit => match key_event.code {
+                KeyCode::Enter => self.edit_task()?,
+
+                // transmitts any character types to the input attribute
+                KeyCode::Char(input_character) => self.task_content_input.push(input_character),
+                // delete last character from input attribute
+                KeyCode::Backspace => _ = self.task_content_input.pop(),
+                KeyCode::Delete => self.mode = Mode::Normal,
+                KeyCode::Esc => self.mode = Mode::Normal,
                 _ => {}
             },
         };
@@ -199,15 +254,36 @@ impl App {
 
     fn add_task(&mut self) -> Result<(), u16> {
         let new_task = loop {
-            match self.client.quick_add(self.create_task_input.clone()) {
+            match self.client.quick_add(self.task_content_input.clone()) {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
             }
         };
         self.tasks.push(new_task);
-        self.create_task_input = String::new();
+        self.task_content_input = String::new();
         self.current_sync_token = String::from("*");
+        Ok(())
+    }
+
+    fn edit_task(&mut self) -> Result<(), u16> {
+        // get all data
+        let id = self.tasks[self.position.selected().unwrap()].get_id();
+        let content = self.task_content_input.clone();
+        self.task_content_input = String::new();
+        let description = self.task_description_input.clone();
+        self.task_description_input = String::new();
+        let date = String::new();
+        let labels = Vec::new();
+        let priority = 4;
+        // verify user entry before api call TODO
+
+        // create task object
+        let task = api::Task::create_task_obj(id, content, description, date, labels, priority);
+
+        // modify task api request
+        self.client.edit(task)?;
+
         Ok(())
     }
 }

@@ -4,20 +4,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
 /// Represents due json object
 pub struct Due {
-    pub date: String,
-    pub string: String,
+    date: String,
+    string: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 /// Task representation: DOES NOT YET IMPLEMENT LABELS
 pub struct Task {
-    pub id: String,
-    pub content: String,
-    pub description: String,
-    pub checked: bool,
-    pub labels: Vec<String>,
-    pub priority: u8,
-    pub due: Option<Due>,
+    id: String,
+    content: String,
+    description: String,
+    checked: bool,
+    labels: Vec<String>,
+    priority: u8,
+    due: Option<Due>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -121,9 +121,35 @@ impl Api {
         };
         Ok(writeresponse)
     }
+
+    pub fn edit(&self, new_task: Task) -> Result<(), u16> {
+        Ok(())
+    }
 }
 
 impl Task {
+    pub fn create_task_obj(
+        id: String,
+        content: String,
+        description: String,
+        date: String,
+        labels: Vec<String>,
+        priority: u8,
+    ) -> Task {
+        return Task {
+            id,
+            content,
+            description,
+            checked: false,
+            labels,
+            priority,
+            due: Some(Due {
+                date,
+                string: String::new(),
+            }),
+        };
+    }
+
     pub fn to_info_string(&self) -> String {
         //! Produce a string suitable for the infomation pane based on a task object
         format!(
@@ -160,5 +186,23 @@ impl Task {
             },
             self.priority,
         )
+    }
+
+    pub fn get_details(&self) -> (String, String, String, Vec<String>, String, u8) {
+        return (
+            self.id.clone(),
+            self.content.clone(),
+            self.description.clone(),
+            self.labels.clone(),
+            match &self.due {
+                None => String::new(),
+                Some(x) => x.date.clone(),
+            },
+            self.priority.clone(),
+        );
+    }
+
+    pub fn get_id(&self) -> String {
+        return self.id.clone();
     }
 }

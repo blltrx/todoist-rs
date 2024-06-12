@@ -21,7 +21,10 @@ pub fn render_create_ui(
         .constraints(vec![Constraint::Max(4), Constraint::Fill(1)])
         .split(frame.size());
 
-    frame.render_widget(input_box(create_input), layout[0]);
+    frame.render_widget(
+        input_box(create_input, String::from("Create Task")),
+        layout[0],
+    );
     frame.render_stateful_widget(list(tasks), layout[1], position)
 }
 
@@ -39,6 +42,44 @@ pub fn render_info_ui(
 
     frame.render_stateful_widget(list(tasks), layout[0], position);
     frame.render_widget(infomation_panel(&taskinfo), layout[1]);
+}
+
+pub fn render_edit_ui(
+    frame: &mut Frame,
+    title: &str,
+    description: &str,
+    labels: &str,
+    date: &str,
+    priority: &str,
+) {
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Max(4),
+            Constraint::Fill(1),
+            Constraint::Max(4),
+            Constraint::Max(4),
+            Constraint::Max(4),
+        ])
+        .split(frame.size());
+
+    frame.render_widget(input_box(title, String::from("title")), layout[0]);
+    frame.render_widget(
+        input_box(description, String::from("description")),
+        layout[1],
+    );
+    frame.render_widget(
+        input_box(labels, String::from("labels (comma seperated)")),
+        layout[2],
+    );
+    frame.render_widget(
+        input_box(date, String::from("date (ISO formatted)")),
+        layout[3],
+    );
+    frame.render_widget(
+        input_box(priority, String::from("priority (1-4 inclusive)")),
+        layout[4],
+    );
 }
 
 fn list(items: &Vec<String>) -> List {
@@ -72,18 +113,18 @@ fn list(items: &Vec<String>) -> List {
         .highlight_spacing(HighlightSpacing::Always);
 }
 
-fn input_box(current_input: &str) -> Paragraph {
+fn input_box(current_input: &str, title: String) -> Paragraph {
     let footer = Title::from(Line::from(vec![
         " delete ".blue(),
-        "to exit create mode - ".into(),
+        "to exit mode - ".into(),
         "enter ".blue(),
-        "to create - ".into(),
+        "to confirm - ".into(),
     ]));
 
     return Paragraph::new(current_input)
         .style(Style::default().fg(Color::LightMagenta))
         .block(
-            Block::bordered().title("Create Task").title(
+            Block::bordered().title(title).title(
                 footer
                     .alignment(Alignment::Center)
                     .position(Position::Bottom),
