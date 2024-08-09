@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::*;
 
 use crate::tui;
@@ -177,15 +177,15 @@ impl App {
                 KeyCode::Delete => self.mode = Mode::Normal,
                 _ => {}
             },
-            Mode::Edit => match (key_event.code, key_event.modifiers) {
-                (KeyCode::Enter, KeyModifiers::NONE) => {
+            Mode::Edit => match key_event.code {
+                KeyCode::Enter => {
                     self.edit_task()?;
                     self.inputs = self.inputs.iter().map(|_| String::new()).collect();
                     self.input_position = 0;
                     self.mode = Mode::Normal;
                 }
 
-                (KeyCode::Tab, KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+                KeyCode::Tab | KeyCode::Down => {
                     if self.input_position == 4 {
                         self.input_position = 0
                     } else {
@@ -193,7 +193,7 @@ impl App {
                     }
                 }
                 // SHIFT is not working idk why i cant be asked sry
-                (KeyCode::Tab, KeyModifiers::SHIFT) | (KeyCode::Up, KeyModifiers::NONE) => {
+                KeyCode::Up => {
                     if self.input_position == 0 {
                         self.input_position = 4
                     } else {
@@ -202,14 +202,12 @@ impl App {
                 }
 
                 // transmitts any character types to the input attribute
-                (KeyCode::Char(input_character), KeyModifiers::NONE) => {
+                KeyCode::Char(input_character) => {
                     self.inputs[self.input_position].push(input_character)
                 }
                 // delete last character from input attribute
-                (KeyCode::Backspace, KeyModifiers::NONE) => {
-                    _ = self.inputs[self.input_position].pop()
-                }
-                (KeyCode::Delete, KeyModifiers::NONE) | (KeyCode::Esc, KeyModifiers::NONE) => {
+                KeyCode::Backspace => _ = self.inputs[self.input_position].pop(),
+                KeyCode::Delete | KeyCode::Esc => {
                     self.inputs = self.inputs.iter().map(|_| String::new()).collect();
                     self.input_position = 0;
                     self.mode = Mode::Normal;
