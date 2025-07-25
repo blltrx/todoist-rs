@@ -110,12 +110,12 @@ fn list(items: &Vec<String>) -> List {
         .borders(Borders::ALL)
         .border_set(border::PLAIN);
 
-    return List::new(items.to_owned())
+    List::new(items.to_owned())
         .block(block)
         .highlight_symbol("> ")
         .highlight_style(Style::new().magenta())
         .style(Style::new().blue())
-        .highlight_spacing(HighlightSpacing::Always);
+        .highlight_spacing(HighlightSpacing::Always)
 }
 
 fn input_box(current_input: &str, title: String) -> Paragraph {
@@ -126,7 +126,7 @@ fn input_box(current_input: &str, title: String) -> Paragraph {
         "to confirm ".into(),
     ]));
 
-    return Paragraph::new(current_input)
+    Paragraph::new(current_input)
         .style(Style::default().fg(Color::LightMagenta))
         .block(
             Block::bordered().title(title).title(
@@ -135,14 +135,14 @@ fn input_box(current_input: &str, title: String) -> Paragraph {
                     .position(Position::Bottom),
             ),
         )
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
 }
 
 fn multiple_input_box(current_input: &str, title: String) -> Paragraph {
-    return Paragraph::new(current_input)
+    Paragraph::new(current_input)
         .style(Style::default().fg(Color::White))
         .block(Block::bordered().title(title.magenta()).light_blue())
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
 }
 
 fn infomation_panel(taskinfo: &str) -> Paragraph {
@@ -151,7 +151,7 @@ fn infomation_panel(taskinfo: &str) -> Paragraph {
         "to close ".into(),
     ]));
 
-    return Paragraph::new(taskinfo)
+    Paragraph::new(taskinfo)
         .block(
             Block::bordered()
                 .title(Title::from(" task infomation ".italic().magenta()))
@@ -163,5 +163,5 @@ fn infomation_panel(taskinfo: &str) -> Paragraph {
                 .style(Style::new().fg(Color::LightBlue))
                 .style(Style::new().fg(Color::White)),
         )
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
 }

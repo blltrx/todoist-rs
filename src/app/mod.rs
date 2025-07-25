@@ -219,7 +219,6 @@ impl App {
     }
 
     /// selection interaction
-
     fn increment_selection(&mut self) {
         if self.tasks.is_empty() {
             self.position.select(None);
@@ -246,7 +245,6 @@ impl App {
     }
 
     /// API interaction
-
     fn sync_tasks(&mut self) -> Result<(), u16> {
         let (new_tasks, sync_token) = loop {
             match self.client.get_tasks(&self.current_sync_token) {

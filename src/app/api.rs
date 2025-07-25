@@ -64,7 +64,7 @@ impl Api {
         };
         match response.status().as_u16() {
             200 => Ok(response.text().unwrap()),
-            _ => Err(response.status().as_u16()),
+            x => Err(x),
         }
     }
 
@@ -143,7 +143,7 @@ impl Api {
             task.description,
             task.labels
                 .iter()
-                .map(|x| format!("\"{}\"", x))
+                .map(|x| format!("\"{x}\""))
                 .collect::<Vec<String>>()
                 .join(","),
             task.priority,

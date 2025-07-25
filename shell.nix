@@ -15,6 +15,10 @@ let
   };
 in
 pkgs.mkShell {
+  name = "rust-dev";
+  packages = with pkgs; [
+    bacon
+  ];
   buildInputs = [
     rust
   ] ++ (with pkgs; [
