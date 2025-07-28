@@ -1,16 +1,15 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::*;
 
+use crate::cache;
 use crate::tui;
-mod api;
 mod ui;
 
 /// App client struct containing all app state variables
 pub struct App {
-    client: api::Api,
+    cache: cache::LocalCache,
     position: ListState,
-    tasks: Vec<api::Task>,
-    current_sync_token: String,
+    tasks: Vec<cache::api::Task>,
     mode: Mode,
     inputs: Vec<String>,
     input_position: usize,
@@ -29,11 +28,10 @@ impl App {
         //! Returns a newly created App struct, including initiating the API client.
         //! Consumes a String that is the API Token for the Todoist API.
         App {
-            client: api::Api::new(todoist_token),
+            cache: cache::LocalCache::new(todoist_token),
             position: ListState::default(),
             tasks: Vec::new(),
             mode: Mode::Normal,
-            current_sync_token: String::from("*"),
             inputs: vec![
                 String::new(),
                 String::new(),
@@ -53,7 +51,7 @@ impl App {
         //! let mut app = App::new(token);
         //! let app_result = app.run(terminal);
         //! ```
-        (self.tasks, self.current_sync_token) = self.client.get_tasks("*")?;
+        self.tasks = self.cache.get_tasks()?;
         self.decrement_selection();
         while !self.exit {
             // calls the ui module to create and render widgets
@@ -148,10 +146,7 @@ impl App {
                 KeyCode::Char('k') => self.decrement_selection(),
                 KeyCode::Up => self.decrement_selection(),
 
-                KeyCode::Char('U') => {
-                    self.current_sync_token = String::from("*");
-                    self.sync_tasks()?
-                }
+                KeyCode::Char('U') => self.sync_tasks()?,
 
                 KeyCode::Char('c') => self.complete_current_task()?,
 
@@ -246,19 +241,14 @@ impl App {
 
     /// API interaction
     fn sync_tasks(&mut self) -> Result<(), u16> {
-        let (new_tasks, sync_token) = loop {
-            match self.client.get_tasks(&self.current_sync_token) {
+        let new_tasks = loop {
+            match self.cache.get_tasks() {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
             }
         };
-        if self.current_sync_token == "*" {
-            self.tasks = new_tasks
-        } else {
-            self.tasks.extend(new_tasks);
-        }
-        self.current_sync_token = sync_token;
+        self.tasks = new_tasks;
         Ok(())
     }
 
@@ -267,21 +257,20 @@ impl App {
             Some(index) => index,
             None => return Ok(()),
         };
-        self.current_sync_token = loop {
-            match self.client.complete_task(&self.tasks[current_index]) {
-                Ok(result) => break result,
+        loop {
+            match self.cache.complete_task(self.tasks.remove(current_index)) {
+                Ok(()) => break,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
             }
-        };
-        self.tasks.remove(current_index);
+        }
         self.decrement_selection();
         Ok(())
     }
 
     fn add_task(&mut self) -> Result<(), u16> {
         let new_task = loop {
-            match self.client.quick_add(self.inputs[0].clone()) {
+            match self.cache.add_task(self.inputs[0].clone()) {
                 Ok(result) => break result,
                 Err(500..=600) => continue,
                 Err(error_code) => return Err(error_code),
@@ -289,7 +278,6 @@ impl App {
         };
         self.tasks.push(new_task);
         self.inputs[0] = String::new();
-        self.current_sync_token = String::from("*");
         Ok(())
     }
 
@@ -315,12 +303,12 @@ impl App {
         self.inputs[0] = String::new();
 
         // create task object
-        let task = api::Task::create_task_obj(id, content, description, date, labels, priority);
+        let task =
+            cache::api::Task::create_task_obj(id, content, description, date, labels, priority);
 
         // modify task api request
-        match self.client.edit(task.clone()) {
-            Ok(sync) => {
-                self.current_sync_token = sync;
+        match self.cache.edit_task(task.clone()) {
+            Ok(()) => {
                 self.tasks[self.position.selected().unwrap()] = task.clone();
             }
             // Err(2) => {}

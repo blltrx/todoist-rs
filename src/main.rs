@@ -1,5 +1,6 @@
 use std::env;
 mod app;
+mod cache;
 mod tui;
 
 // new api https://developer.todoist.com/api/v1 update needed to comply
