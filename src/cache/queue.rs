@@ -4,14 +4,14 @@ pub enum ApiAction {
     Get,
     QuickAdd,
     Complete,
-    Edit
+    Edit,
 }
 
-pub struct Action{
+pub struct Action {
     sync: Option<String>,
     task: Option<api::Task>,
     quick_add: Option<String>,
-    type: ApiAction
+    r#type: ApiAction,
 }
 
 pub struct Queue<T> {
@@ -19,16 +19,15 @@ pub struct Queue<T> {
 }
 
 impl<T> Queue<T> {
-    pub fn new() {
-        todo!();
+    pub fn new() -> Queue<T> {
+        Queue { queue: Vec::new() }
     }
 
-    pub fn enqueue(item: T) {
-        todo!();
+    pub fn enqueue(&mut self, item: T) {
+        self.queue.push(item);
     }
 
-    pub fn dequeue() -> T {
-        todo!();
+    pub fn dequeue(&mut self) -> Option<T> {
+        self.queue.first()
     }
 }
-

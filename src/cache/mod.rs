@@ -5,7 +5,7 @@ mod sync;
 pub struct LocalCache {
     client: api::Api,
     tasks: Vec<api::Task>,
-    queue: queue::Queue<,
+    queue: queue::Queue<queue::Action>,
 }
 
 impl LocalCache {
@@ -18,6 +18,7 @@ impl LocalCache {
         LocalCache {
             client,
             tasks: Vec::new(),
+            queue: queue::Queue::new(),
         }
     }
 
